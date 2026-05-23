@@ -1,11 +1,19 @@
 <?php
 
+namespace  App\Service;
+
+use App\Contract\CatalogRepositoryInterface;
+use App\Repository\BaseRepository;
+use App\Repository\CatalogRepository;
+use inc\Database;
+use App\Service\BaseService;
 /*
  * Handles catalog business logic and orchestration.
  * Does NOT directly talk to DB.
  * Only uses Repository.
  */
-class CatalogService
+
+class CatalogService extends BaseService
 {
     private CatalogRepositoryInterface $repo;
 
@@ -43,7 +51,10 @@ class CatalogService
         $search = $this->getSearchTerm($queryParams);
         $currentPage = $this->getCurrentPage($queryParams);
 
-        $totalItems = $this->repo->getCatalogCount($section, $search);
+        $totalItems = $this->repo->count([
+            'category' => $section,
+            'search' => $search
+        ]);
 
         $pagination = $this->buildPagination($totalItems, $currentPage);
 
@@ -89,38 +100,38 @@ class CatalogService
         return $search !== '' ? $search : null;
     }
 
-    /* =========================================================
-     * PAGINATION INPUT
-     * ========================================================= */
-    private function getCurrentPage(array $params): int
-    {
-        $page = filter_var($params['pg'] ?? 1, FILTER_VALIDATE_INT);
+    // /* =========================================================
+    //  * PAGINATION INPUT
+    //  * ========================================================= */
+    // private function getCurrentPage(array $params): int
+    // {
+    //     $page = filter_var($params['pg'] ?? 1, FILTER_VALIDATE_INT);
 
-        return ($page === false || $page < 1) ? 1 : $page;
-    }
+    //     return ($page === false || $page < 1) ? 1 : $page;
+    // }
 
-    /* =========================================================
-     * PAGINATION LOGIC
-     * ========================================================= */
-    private function buildPagination(int $totalItems, int $currentPage): array
-    {
-        $itemsPerPage = 8;
+    // /* =========================================================
+    //  * PAGINATION LOGIC
+    //  * ========================================================= */
+    // private function buildPagination(int $totalItems, int $currentPage): array
+    // {
+    //     $itemsPerPage = 8;
 
-        $totalPages = max(1, (int) ceil($totalItems / $itemsPerPage));
+    //     $totalPages = max(1, (int) ceil($totalItems / $itemsPerPage));
 
-        if ($currentPage > $totalPages) {
-            $currentPage = $totalPages;
-        }
+    //     if ($currentPage > $totalPages) {
+    //         $currentPage = $totalPages;
+    //     }
 
-        $offset = ($currentPage - 1) * $itemsPerPage;
+    //     $offset = ($currentPage - 1) * $itemsPerPage;
 
-        return [
-            'limit' => $itemsPerPage,
-            'offset' => $offset,
-            'currentPage' => $currentPage,
-            'totalPages' => $totalPages
-        ];
-    }
+    //     return [
+    //         'limit' => $itemsPerPage,
+    //         'offset' => $offset,
+    //         'currentPage' => $currentPage,
+    //         'totalPages' => $totalPages
+    //     ];
+    // }
     /* =========================================================
      * DATA ORCHESTRATION (CHOOSING REPOSITORY METHOD)
      * ========================================================= */
@@ -142,7 +153,7 @@ class CatalogService
             return $this->repo->getCategoryCatalog($section, $limit, $offset);
         }
 
-        return $this->repo->getFullCatalog($limit, $offset);
+        return $this->repo->getAll($limit, $offset);
     }
 
     /* =========================================================
@@ -153,26 +164,26 @@ class CatalogService
         return $section ? ucfirst($section) : 'Full Catalog';
     }
 
-    private function buildQueryString(?string $section, ?string $search): string
-    {
-        $params = [];
+    // private function buildQueryString(?string $section, ?string $search): string
+    // {
+    //     $params = [];
 
-        if ($section !== null) {
-            $params[] = 'cat=' . urlencode($section);
-        }
+    //     if ($section !== null) {
+    //         $params[] = 'cat=' . urlencode($section);
+    //     }
 
-        if ($search !== null) {
-            $params[] = 's=' . urlencode($search);
-        }
+    //     if ($search !== null) {
+    //         $params[] = 's=' . urlencode($search);
+    //     }
 
-        return implode('&', $params);
-    }
+    //     return implode('&', $params);
+    // }
 
     /* =========================================================
      * SINGLE ITEM (OPTIONAL BUSINESS LOGIC LAYER)
      * ========================================================= */
-    public function getSingleItem(int $id): array
+    public function getById(int $id): array
     {
-        return $this->repo->getSingleItem($id);
+        return $this->repo->getById($id);
     }
 }

@@ -1,4 +1,7 @@
 <?php
+namespace App\Repository;
+use App\Contract\FormatRepositoryInterface;
+use PDO;
 
 /**
  * Handles database operations related to formats,

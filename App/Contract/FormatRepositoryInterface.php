@@ -1,4 +1,5 @@
 <?php
+namespace App\Contract;
 
 /**
  * Defines methods for retrieving format, category,

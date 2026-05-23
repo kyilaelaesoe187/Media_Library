@@ -1,5 +1,6 @@
 <?php
-
+namespace Controller;
+use App\Service\CatalogService;
 /**
  * Handles displaying detailed information
  * for a single catalog item.
@@ -29,7 +30,7 @@ class DetailsController
 
         // Get item data from service
        // $item = $this->CatalogService->single_item_array($id);
-        $item = $this->catalogService->getSingleItem($id);
+        $item = $this->catalogService->getById($id);
         // Redirect if item does not exist
         if (empty($item)) {
             header("Location: " . BASE_URL . "/Public/index.php?page=catalog");

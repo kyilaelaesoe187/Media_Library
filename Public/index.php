@@ -1,5 +1,23 @@
 <?php
 
+use Dotenv\Dotenv;
+use App\Repository\CatalogRepository;
+use App\Repository\FormatRepository;
+
+use App\Service\CatalogService;
+use App\Service\FormatService;
+
+use Controller\CatalogController;
+use Controller\DetailsController;
+use Controller\SuggestController;
+
+use Controller\Api\CatalogApiController;
+use Controller\Api\DetailsApiController;
+use Controller\Api\SuggestApiController;
+use inc\Database;
+
+
+
 /**
  * Main application entry point.
  * Front Controller (All requests come here)
@@ -15,7 +33,6 @@ require_once BASE_PATH . '/vendor/autoload.php';
 require_once BASE_PATH . '/inc/Database.php';
 require_once BASE_PATH . '/inc/CustomPath.php';
 
-use Dotenv\Dotenv;
 
 /*
 |--------------------------------------------------------------------------

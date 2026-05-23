@@ -1,17 +1,17 @@
 <?php
-
+namespace App\Contract;
 /**
  * Defines methods for retrieving catalog data
  * from the data source.
  */
 
-interface CatalogRepositoryInterface
+interface CatalogRepositoryInterface extends BaseInterface
 {
     // Get total catalog item count
-    public function getCatalogCount($category = null, $search = null);
+    // public function getCatalogCount($category = null, $search = null);
 
     // Get complete catalog list
-    public function getFullCatalog($limit = null, $offset = 0);
+    // public function getFullCatalog($limit = null, $offset = 0);
 
     // Get catalog items by category
     public function getCategoryCatalog($category, $limit = null, $offset = 0);
@@ -23,5 +23,5 @@ interface CatalogRepositoryInterface
     public function getRandomCatalog();
 
     // Get a single catalog item by ID
-    public function getSingleItem($id);
+    // public function getSingleItem($id);
 }

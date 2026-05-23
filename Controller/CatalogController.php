@@ -1,6 +1,7 @@
 <?php
-
-require_once BASE_PATH . '/Model/Service/CatalogService.php';
+namespace Controller;
+use App\Service\CatalogService;
+//require_once BASE_PATH . '/Service/CatalogService.php';
 
 /*
  * Thin Controller:

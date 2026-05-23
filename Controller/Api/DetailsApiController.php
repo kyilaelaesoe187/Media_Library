@@ -1,6 +1,8 @@
 <?php
-
-require_once BASE_PATH . '/Model/Service/CatalogService.php';
+namespace Controller\Api;
+use App\Service\CatalogService;
+use Exception;
+// require_once BASE_PATH . '/Model/Service/CatalogService.php';
 
 class DetailsApiController
 {
@@ -35,7 +37,7 @@ class DetailsApiController
         }
 
         // Get item
-        $item = $this->catalogService->getSingleItem($id);
+        $item = $this->catalogService->getById($id);
 
         // Item not found
         if (empty($item)) {

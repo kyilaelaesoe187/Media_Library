@@ -1,11 +1,12 @@
 <?php
-
+namespace Controller;
+use App\Service\FormatService;
 /**
  * Handles media suggestion requests,
  * form validation, and email sending.
  */
 
-require_once __DIR__ . '/../vendor/autoload.php';
+// require_once __DIR__ . '/../vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -116,7 +117,7 @@ class SuggestController
         $mail->Host = $_ENV['MAIL_HOST'];
         $mail->Port = $_ENV['MAIL_PORT'];
         $mail->Port = 587;
-$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->SMTPAuth   = true;
 
         $mail->Username = $_ENV['MAIL_USERNAME'];
@@ -143,4 +144,3 @@ $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         return $data;
     }
 }
-

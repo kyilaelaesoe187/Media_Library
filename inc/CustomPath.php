@@ -4,9 +4,11 @@ spl_autoload_register(function ($class) {
     $baseDir = dirname(__DIR__) . '/';
 
     $paths = [
+        'App/Contract/',
         'Controller/',
-        'Model/Service/',
-        'Model/Repository/',
+        'App/Service/',
+        'App/Repository/',
+        'Controller/',
         'view/',           // ItemView lives here
         'inc/',             // Database, helpers if class-based
     ];
