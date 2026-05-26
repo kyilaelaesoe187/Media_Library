@@ -1,5 +1,5 @@
 <?php
-namespace Controller\Api;
+namespace App\Controller\Api;
 use App\Service\CatalogService;
 use Exception;
 // require_once BASE_PATH . '/Model/Service/CatalogService.php';

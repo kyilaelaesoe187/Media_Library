@@ -2,70 +2,96 @@
 
 namespace App\Service;
 
+use App\Contract\BaseInterface;
+
 /**
- * Common service logic
+ * Shared service utilities (ONLY reusable logic)
+ * No business logic here
  */
-abstract class BaseService
+abstract class BaseService //implements BaseInterface
 {
-    /**
-     * Pagination helper
-     */
+    /* =========================
+     * PAGINATION
+     * ========================= */
+
+    protected function getCurrentPage(array $params): int
+    {
+        $page = filter_var($params['pg'] ?? 1, FILTER_VALIDATE_INT);
+
+        return ($page === false || $page < 1) ? 1 : $page;
+    }
+
+
+
     protected function buildPagination(
         int $totalItems,
         int $currentPage,
         int $itemsPerPage = 8
     ): array {
-        $totalPages = max(
-            1,
-            (int) ceil($totalItems / $itemsPerPage)
-        );
 
-        if ($currentPage > $totalPages) {
-            $currentPage = $totalPages;
-        }
+        $totalPages = max(1, (int) ceil($totalItems / $itemsPerPage));
 
-        $offset = ($currentPage - 1) * $itemsPerPage;
+        $currentPage = min($currentPage, $totalPages);
 
         return [
             'limit' => $itemsPerPage,
-            'offset' => $offset,
+            'offset' => ($currentPage - 1) * $itemsPerPage,
             'currentPage' => $currentPage,
             'totalPages' => $totalPages
         ];
     }
 
-    /**
-     * Validate current page
-     */
-    protected function getCurrentPage(array $params): int
-    {
-        $page = filter_var(
-            $params['pg'] ?? 1,
-            FILTER_VALIDATE_INT
-        );
+    /* =========================
+     * INPUT HELPERS
+     * ========================= */
 
-        return ($page === false || $page < 1)
-            ? 1
-            : $page;
+    protected function normalizeSearch(?string $search): ?string
+    {
+        $search = trim((string) $search);
+        return $search !== '' ? $search : null;
     }
 
-    /**
-     * Build query string
-     */
-    protected function buildQueryString(
-        ?string $section,
-        ?string $search
-    ): string {
+    protected function validateCategory(?string $category, array $allowed): ?string
+    {
+        return in_array($category, $allowed, true) ? $category : null;
+    }
+
+    /* =========================
+     * QUERY STRING
+     * ========================= */
+
+    protected function buildQueryString(?string $category, ?string $search): string
+    {
         $params = [];
 
-        if ($section !== null) {
-            $params[] = 'cat=' . urlencode($section);
+        if ($category) {
+            $params[] = 'cat=' . urlencode($category);
         }
 
-        if ($search !== null) {
+        if ($search) {
             $params[] = 's=' . urlencode($search);
         }
 
         return implode('&', $params);
+    }
+
+    /* =========================
+     * RESPONSE FORMATTERS
+     * ========================= */
+
+    protected function success(string $message, array $data = []): array
+    {
+        return array_merge([
+            'success' => true,
+            'message' => $message
+        ], $data);
+    }
+
+    protected function error(string $message, array $data = []): array
+    {
+        return array_merge([
+            'success' => false,
+            'message' => $message
+        ], $data);
     }
 }

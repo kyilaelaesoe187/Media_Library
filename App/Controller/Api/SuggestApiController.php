@@ -1,5 +1,5 @@
 <?php
-namespace Controller\Api;
+namespace App\Controller\Api;
 use App\Service\FormatService;
 
 

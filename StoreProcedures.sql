@@ -344,3 +344,63 @@ ON People(fullname);
 
 CREATE INDEX idx_media_types_category
 ON Media_Types(category);
+
+--=====================
+-- CREATE USER PROCEDURE
+--======================
+DELIMITER $$
+
+CREATE PROCEDURE sp_create_user (
+    IN p_username VARCHAR(100),
+    IN p_email VARCHAR(255),
+    IN p_password VARCHAR(255)
+)
+BEGIN
+    INSERT INTO users (
+        username,
+        email,
+        password
+    )
+    VALUES (
+        p_username,
+        p_email,
+        p_password
+    );
+END$$
+
+DELIMITER ;
+
+-- ===================
+-- FIND USER BY EMAIL
+-- ===================
+DELIMITER $$
+
+CREATE PROCEDURE sp_get_user_by_email (
+    IN p_email VARCHAR(255)
+)
+BEGIN
+    SELECT *
+    FROM users
+    WHERE email = p_email
+    LIMIT 1;
+END$$
+
+DELIMITER ;
+
+--=========================
+-- GET USER BY ID
+--=========================
+
+DELIMITER $$
+
+CREATE PROCEDURE sp_get_user_by_id (
+    IN p_id INT
+)
+BEGIN
+    SELECT *
+    FROM users
+    WHERE id = p_id
+    LIMIT 1;
+END$$
+
+DELIMITER ;

@@ -1,6 +1,9 @@
 <?php
-namespace Controller;
+
+namespace App\Controller;
+
 use App\Service\FormatService;
+
 /**
  * Handles media suggestion requests,
  * form validation, and email sending.
@@ -11,7 +14,7 @@ use App\Service\FormatService;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-class SuggestController
+class SuggestController extends BaseController
 {
     private FormatService $formatService;
 
@@ -24,6 +27,8 @@ class SuggestController
     // Display suggestion form page
     public function index()
     {
+        $this->requireLogin();
+
         $pageTitle = "Suggest a media item";
         $section   = "suggest";
         $hideSearch = true;
@@ -51,6 +56,7 @@ class SuggestController
     // Process and validate form submission
     private function handleForm(): array
     {
+
         $data = [
             'name' => null,
             'email' => null,

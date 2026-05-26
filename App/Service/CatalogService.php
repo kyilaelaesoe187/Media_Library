@@ -1,68 +1,49 @@
 <?php
 
-namespace  App\Service;
+namespace App\Service;
 
+use App\Contract\BaseInterface;
 use App\Contract\CatalogRepositoryInterface;
-use App\Repository\BaseRepository;
-use App\Repository\CatalogRepository;
-use inc\Database;
-use App\Service\BaseService;
-/*
- * Handles catalog business logic and orchestration.
- * Does NOT directly talk to DB.
- * Only uses Repository.
- */
 
 class CatalogService extends BaseService
 {
     private CatalogRepositoryInterface $repo;
 
-    /*
-     * Constructor with dependency injection (defensive fallback included)
-     */
-    public function __construct(?CatalogRepositoryInterface $repo = null)
+    public function __construct(CatalogRepositoryInterface $repo)
     {
-        if ($repo === null) {
-            $db = Database::getConnection();
-            $repo = new CatalogRepository($db);
-        }
-
         $this->repo = $repo;
     }
 
-    /* =========================================================
-     * HOME PAGE DATA
-     * ========================================================= */
     public function getHomePageData(): array
     {
         return [
-            'random' => $this->repo->getRandomCatalog(),
+            'random' => $this->repo->findRandom(),
             'pageTitle' => 'Personal Media Library',
             'section' => 'catalog'
         ];
     }
 
-    /* =========================================================
-     * MAIN CATALOG PAGE ORCHESTRATION
-     * ========================================================= */
     public function getCatalogPage(array $queryParams): array
     {
-        $section = $this->getCategory($queryParams);
-        $search = $this->getSearchTerm($queryParams);
+        $section = $this->validateCategory(
+            $queryParams['cat'] ?? null,
+            ['books', 'movies', 'music']
+        );
+
+        $search = $this->normalizeSearch(
+            $queryParams['s'] ?? null
+        );
+
         $currentPage = $this->getCurrentPage($queryParams);
 
-        $totalItems = $this->repo->count([
-            'category' => $section,
-            'search' => $search
-        ]);
+        $totalItems = $this->repo->count($section, $search);
 
         $pagination = $this->buildPagination($totalItems, $currentPage);
 
-        $catalog = $this->loadCatalogData(
+        $catalog = $this->loadCatalog(
             $section,
             $search,
-            $pagination['limit'],
-            $pagination['offset']
+            $pagination
         );
 
         return [
@@ -76,114 +57,51 @@ class CatalogService extends BaseService
         ];
     }
 
-    /* =========================================================
-     * CATEGORY VALIDATION
-     * ========================================================= */
-    private function getCategory(array $params): ?string
-    {
-        $category = $params['cat'] ?? null;
-
-        $allowed = ['books', 'movies', 'music'];
-
-        return ($category !== null && in_array($category, $allowed, true))
-            ? $category
-            : null;
-    }
-
-    /* =========================================================
-     * SEARCH HANDLING
-     * ========================================================= */
-    private function getSearchTerm(array $params): ?string
-    {
-        $search = trim($params['s'] ?? '');
-
-        return $search !== '' ? $search : null;
-    }
-
-    // /* =========================================================
-    //  * PAGINATION INPUT
-    //  * ========================================================= */
-    // private function getCurrentPage(array $params): int
-    // {
-    //     $page = filter_var($params['pg'] ?? 1, FILTER_VALIDATE_INT);
-
-    //     return ($page === false || $page < 1) ? 1 : $page;
-    // }
-
-    // /* =========================================================
-    //  * PAGINATION LOGIC
-    //  * ========================================================= */
-    // private function buildPagination(int $totalItems, int $currentPage): array
-    // {
-    //     $itemsPerPage = 8;
-
-    //     $totalPages = max(1, (int) ceil($totalItems / $itemsPerPage));
-
-    //     if ($currentPage > $totalPages) {
-    //         $currentPage = $totalPages;
-    //     }
-
-    //     $offset = ($currentPage - 1) * $itemsPerPage;
-
-    //     return [
-    //         'limit' => $itemsPerPage,
-    //         'offset' => $offset,
-    //         'currentPage' => $currentPage,
-    //         'totalPages' => $totalPages
-    //     ];
-    // }
-    /* =========================================================
-     * DATA ORCHESTRATION (CHOOSING REPOSITORY METHOD)
-     * ========================================================= */
-    private function loadCatalogData(
+    private function loadCatalog(
         ?string $section,
         ?string $search,
-        int $limit,
-        int $offset
+        array $pagination
     ): array {
-        if ($search !== null && $section !== null) {
-            return $this->repo->getSearchCatalog($search, $section, $limit, $offset);
+
+        if ($search && $section) {
+            return $this->repo->search(
+                $search,
+                $section,
+                $pagination['limit'],
+                $pagination['offset']
+            );
         }
 
-        if ($search !== null) {
-            return $this->repo->getSearchCatalog($search, null, $limit, $offset);
+        if ($search) {
+            return $this->repo->search(
+                $search,
+                null,
+                $pagination['limit'],
+                $pagination['offset']
+            );
         }
 
-        if ($section !== null) {
-            return $this->repo->getCategoryCatalog($section, $limit, $offset);
+        if ($section) {
+            return $this->repo->findByCategory(
+                $section,
+                $pagination['limit'],
+                $pagination['offset']
+            );
         }
 
-        return $this->repo->getAll($limit, $offset);
+        return $this->repo->findAll(
+            $pagination['limit'],
+            $pagination['offset']
+        );
     }
 
-    /* =========================================================
-     * UI HELPERS
-     * ========================================================= */
     private function buildPageTitle(?string $section): string
     {
         return $section ? ucfirst($section) : 'Full Catalog';
     }
 
-    // private function buildQueryString(?string $section, ?string $search): string
-    // {
-    //     $params = [];
-
-    //     if ($section !== null) {
-    //         $params[] = 'cat=' . urlencode($section);
-    //     }
-
-    //     if ($search !== null) {
-    //         $params[] = 's=' . urlencode($search);
-    //     }
-
-    //     return implode('&', $params);
-    // }
-
-    /* =========================================================
-     * SINGLE ITEM (OPTIONAL BUSINESS LOGIC LAYER)
-     * ========================================================= */
-    public function getById(int $id): array
+    public function getById(int $id): ?array
     {
-        return $this->repo->getById($id);
+        return $this->repo->findById($id);
     }
 }

@@ -2,11 +2,10 @@
 
 namespace App\Repository;
 
-use PDO;
 use App\Contract\BaseInterface;
+use PDO;
 
-abstract class BaseRepository
-implements BaseInterface
+abstract class BaseRepository implements BaseInterface
 {
     protected PDO $db;
 
@@ -15,79 +14,31 @@ implements BaseInterface
         $this->db = $db;
     }
 
-    public function count(
-        array $filters = []
-    ): int {
-
-        $search = $filters['search'] ?? null;
-        $category = $filters['category'] ?? null;
-
-        $result = $this->db->prepare(
-            "CALL sp_search_catalog_count(
-                :search,
-                :category
-            )"
+    protected function procedure(string $name, array $params = []): array
+    {
+        $stmt = $this->db->prepare(
+            "CALL {$name}(" . implode(',', array_fill(0, count($params), '?')) . ")"
         );
 
-        $result->bindValue(
-            ':search',
-            $search,
-            $search === null
-                ? PDO::PARAM_NULL
-                : PDO::PARAM_STR
-        );
+        $stmt->execute($params);
 
-        $result->bindValue(
-            ':category',
-            $category,
-            $category === null
-                ? PDO::PARAM_NULL
-                : PDO::PARAM_STR
-        );
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $result->execute();
+        $stmt->closeCursor();
 
-        $count = $result->fetchColumn();
-
-        $result->nextRowset();
-        $result->closeCursor();
-
-        return (int) $count;
+        return $data;
     }
 
-    public function getAll(
-        ?int $limit = null,
-        int $offset = 0
-    ): array {
-
-        $result = $this->db->prepare(
-            "CALL sp_get_full_catalog(?, ?)"
-        );
-
-        $result->bindParam(
-            1,
-            $limit,
-            $limit === null
-                ? PDO::PARAM_NULL
-                : PDO::PARAM_INT
-        );
-
-        $result->bindParam(
-            2,
-            $offset,
-            PDO::PARAM_INT
-        );
-
-        $result->execute();
-
-        $catalog = $result->fetchAll();
-
-        $result->closeCursor();
-
-        return $catalog;
+    protected function first(string $name, array $params = []): ?array
+    {
+        return $this->procedure($name, $params)[0] ?? null;
     }
 
-    abstract public function getById(
-        int $id
-    ): ?array;
+    protected function query(string $sql, array $params = []): array
+    {
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

@@ -2,163 +2,104 @@
 
 namespace App\Repository;
 
-use PDO;
 use App\Contract\CatalogRepositoryInterface;
 
-/**
- * Handles catalog database operations
- */
-class CatalogRepository
-    extends BaseRepository
-    implements CatalogRepositoryInterface
+class CatalogRepository extends BaseRepository implements CatalogRepositoryInterface
 {
-    public function __construct(PDO $db)
+    protected string $getByIdProcedure = 'sp_get_item_full_detail';
+
+    // ------------------------
+    // REQUIRED BASE METHODS
+    // ------------------------
+
+    public function findById(int $id): ?array
     {
-        parent::__construct($db);
+        $stmt = $this->db->prepare(
+            "CALL {$this->getByIdProcedure}(?)"
+        );
+
+        $stmt->execute([$id]);
+
+        /*
+    |--------------------------------------------------------------------------
+    | FIRST RESULT SET
+    |--------------------------------------------------------------------------
+    */
+
+        $item = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$item) {
+
+            $stmt->closeCursor();
+
+            return null;
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | SECOND RESULT SET
+    |--------------------------------------------------------------------------
+    */
+
+        $stmt->nextRowset();
+
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+
+            $role = strtolower($row['role']);
+
+            $item[$role][] = $row['fullname'];
+        }
+
+        $stmt->closeCursor();
+
+        return $item;
     }
 
-    /**
-     * Get catalog items by category
-     */
-    public function getCategoryCatalog(
-        $category,
-        $limit = null,
-        $offset = 0
-    ) {
-        $result = $this->db->prepare(
-            "CALL sp_get_catalog(?, ?, ?)"
-        );
-
-        $result->bindParam(
-            1,
-            $category,
-            PDO::PARAM_STR
-        );
-
-        $result->bindParam(
-            2,
-            $limit,
-            $limit === null
-                ? PDO::PARAM_NULL
-                : PDO::PARAM_INT
-        );
-
-        $result->bindParam(
-            3,
-            $offset,
-            PDO::PARAM_INT
-        );
-
-        $result->execute();
-
-        $catalog = $result->fetchAll();
-
-        $result->closeCursor();
-
-        return $catalog;
-    }
-
-    /**
-     * Search catalog
-     */
-    public function getSearchCatalog(
-        $search,
-        $category = null,
-        $limit = null,
-        $offset = 0
-    ) {
-        $search = ($search === '' ? null : $search);
-        $category = ($category === '' ? null : $category);
-
-        $result = $this->db->prepare(
-            "CALL sp_search_catalog(?, ?, ?, ?)"
-        );
-
-        $result->bindValue(
-            1,
-            $search,
-            $search === null
-                ? PDO::PARAM_NULL
-                : PDO::PARAM_STR
-        );
-
-        $result->bindValue(
-            2,
-            $category,
-            $category === null
-                ? PDO::PARAM_NULL
-                : PDO::PARAM_STR
-        );
-
-        $result->bindValue(
-            3,
-            $limit,
-            PDO::PARAM_INT
-        );
-
-        $result->bindValue(
-            4,
-            $offset,
-            PDO::PARAM_INT
-        );
-
-        $result->execute();
-
-        $catalog = $result->fetchAll();
-
-        $result->nextRowset();
-        $result->closeCursor();
-
-        return $catalog;
-    }
-
-    /**
-     * Get random catalog items
-     */
-    public function getRandomCatalog()
+    public function findAll(?int $limit = null, int $offset = 0): array
     {
-        $result = $this->db->query(
-            "SELECT * FROM view_random"
-        );
-
-        return $result->fetchAll();
+        return $this->procedure('sp_get_full_catalog', [$limit, $offset]);
     }
 
-    /**
-     * Get single item by ID
-     */
-    public function getById(
-    int $id
-): ?array
-{
-    $result = $this->db->prepare(
-        "CALL sp_get_item_full_detail(?)"
-    );
-
-    $result->bindParam(
-        1,
-        $id,
-        PDO::PARAM_INT
-    );
-
-    $result->execute();
-
-    $item = $result->fetch(PDO::FETCH_ASSOC);
-
-    if ($item === false) {
-        $result->closeCursor();
-        return null;
+    public function create(array $data): bool
+    {
+        $this->procedure('sp_create_catalog', $data);
+        return true;
     }
 
-    $result->nextRowset();
-
-    while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
-        $item[strtolower($row['role'])][] =
-            $row['fullname'];
+    public function update(int $id, array $data): bool
+    {
+        $this->procedure('sp_update_catalog', array_merge([$id], $data));
+        return true;
     }
 
-    $result->closeCursor();
+    public function delete(int $id): bool
+    {
+        $this->procedure('sp_delete_catalog', [$id]);
+        return true;
+    }
 
-    return $item;
-}
+    // ------------------------
+    // CUSTOM METHODS
+    // ------------------------
+
+    public function findByCategory(string $category, ?int $limit = null, int $offset = 0): array
+    {
+        return $this->procedure('sp_get_catalog', [$category, $limit, $offset]);
+    }
+
+    public function search(string $search, ?string $category = null, ?int $limit = null, int $offset = 0): array
+    {
+        return $this->procedure('sp_search_catalog', [$search, $category, $limit, $offset]);
+    }
+
+    public function findRandom(): array
+    {
+        return $this->query("SELECT * FROM view_random");
+    }
+
+    public function count(?string $category = null, ?string $search = null): int
+    {
+        $result = $this->first('sp_search_catalog_count', [$search, $category]);
+        return (int) ($result['count'] ?? 0);
+    }
 }
