@@ -8,66 +8,50 @@ use App\Model\User;
 class UserService extends BaseService
 {
     public function __construct(
-        private UserRepositoryInterface $repo,
-        private Validator $validator
+        private UserRepositoryInterface $repo
     ) {}
 
-    /* =========================
-     * LOGIN
-     * ========================= */
+    /*
+    |--------------------------------------------------------------------------
+    | LOGIN
+    |--------------------------------------------------------------------------
+    */
 
     public function login(
         string $email,
         string $password
     ): array {
 
-        // VALIDATION
-        $this->validator->validate(
-            User::loginRules(),
-            [
-                'email' => $email,
-                'password' => $password
-            ]
-        );
+        $user = $this->repo
+            ->findByEmail($email);
 
-        if ($this->validator->fails()) {
-
+        if (!$user) {
             return $this->error(
-                'Validation failed',
-                [
-                    'errors' => $this->validator->errors()
-                ]
+                'Invalid email'
             );
         }
 
-        // FIND USER
-        $user = $this->repo->findByEmail($email);
-
-        if (!$user) {
-            return $this->error('Invalid email');
+        if (
+            !$user->verifyPassword($password)
+        ) {
+            return $this->error(
+                'Wrong password'
+            );
         }
 
-        // VERIFY PASSWORD
-        if (!password_verify(
-            $password,
-            $user['password']
-        )) {
-
-            return $this->error('Wrong password');
-        }
-
-        // SUCCESS
         return $this->success(
             'Login successful',
             [
-                'user' => $this->formatUser($user)
+                'user' => $user->toResponse()
             ]
         );
     }
 
-    /* =========================
-     * REGISTER
-     * ========================= */
+    /*
+    |--------------------------------------------------------------------------
+    | REGISTER
+    |--------------------------------------------------------------------------
+    */
 
     public function register(
         string $username,
@@ -75,62 +59,111 @@ class UserService extends BaseService
         string $password
     ): array {
 
-        // VALIDATION
-        $this->validator->validate(
-            User::registerRules(),
-            [
-                'username' => $username,
-                'email' => $email,
-                'password' => $password
-            ]
-        );
-
-        if ($this->validator->fails()) {
-
+        if (
+            $this->repo->findByEmail($email)
+        ) {
             return $this->error(
-                'Validation failed',
-                [
-                    'errors' => $this->validator->errors()
-                ]
+                'Email already exists'
             );
         }
 
-        // CHECK EXISTING EMAIL
-        if ($this->repo->findByEmail($email)) {
-            return $this->error('Email already exists');
-        }
-
-        // HASH PASSWORD
-        $hashedPassword = password_hash(
-            $password,
-            PASSWORD_DEFAULT
+        $user = new User(
+            null,
+            $username,
+            $email,
+            password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            )
         );
 
-        // CREATE USER
-        $ok = $this->repo->create([
-            'username' => $username,
-            'email' => $email,
-            'password' => $hashedPassword
-        ]);
+        $ok = $this->repo->create($user);
 
         return $ok
-            ? $this->success('Registration successful')
-            : $this->error('Registration failed');
+            ? $this->success(
+                'Registration successful',
+                [
+                    'user' => $user->toResponse()
+                ]
+            )
+            : $this->error(
+                'Registration failed'
+            );
     }
 
-    /* =========================
-     * SAFE USER OUTPUT
-     * ========================= */
+    /*
+    |--------------------------------------------------------------------------
+    | GET USER
+    |--------------------------------------------------------------------------
+    */
 
-    private function formatUser(array $user): array
+    public function findUser(
+        int $id
+    ): array {
+
+        $user = $this->repo
+            ->findById($id);
+
+        if (!$user) {
+            return $this->error(
+                'User not found'
+            );
+        }
+
+        return $this->success(
+            'User found',
+            [
+                'user' => $user->toResponse()
+            ]
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET ALL USERS
+    |--------------------------------------------------------------------------
+    */
+
+    public function allUsers(): array
     {
-        return [
+        $users = $this->repo
+            ->findAll();
 
-            'id' => $user['id'],
+        return $this->success(
+            'Users retrieved',
+            [
+                'users' => array_map(
+                    fn(User $user)
+                        => $user->toResponse(),
+                    $users
+                )
+            ]
+        );
+    }
 
-            'username' => $user['username'],
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE USER
+    |--------------------------------------------------------------------------
+    */
 
-            'email' => $user['email']
-        ];
+    public function deleteUser(
+        int $id
+    ): array {
+
+        $user = $this->repo
+            ->findById($id);
+
+        if (!$user) {
+            return $this->error(
+                'User not found'
+            );
+        }
+
+        $this->repo->delete($id);
+
+        return $this->success(
+            'User deleted'
+        );
     }
 }

@@ -2,10 +2,10 @@
 
 namespace App\Repository;
 
-use App\Contract\BaseInterface;
+//use App\Contract\BaseInterface;
 use PDO;
 
-abstract class BaseRepository implements BaseInterface
+abstract class BaseRepository //implements BaseInterface
 {
     protected PDO $db;
 

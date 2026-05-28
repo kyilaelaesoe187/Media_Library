@@ -1,4 +1,5 @@
 <?php
+ob_start();
 session_start();
 
 use Dotenv\Dotenv;
@@ -122,9 +123,10 @@ $formatService = new FormatService(
 $validator = new Validator();
 
 $userService = new UserService(
-    $userRepo,
-    $validator
+    $userRepo
 );
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -145,7 +147,8 @@ $suggestController = new SuggestController(
 );
 
 $authController = new AuthController(
-    $userService
+    $userService,
+    $validator
 );
 
 /*
@@ -252,6 +255,9 @@ $routes = [
 
 //$page = $_GET['page'] ?? 'home';
 $page = $_GET['page'] ?? 'home';
+//echo "PAGE: " . $page;
+// echo "CURRENT PAGE: " . $page;
+// exit;
 
 /*
 |--------------------------------------------------------------------------

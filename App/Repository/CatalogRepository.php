@@ -99,7 +99,11 @@ class CatalogRepository extends BaseRepository implements CatalogRepositoryInter
 
     public function count(?string $category = null, ?string $search = null): int
     {
-        $result = $this->first('sp_search_catalog_count', [$search, $category]);
+        $result = $this->first('sp_search_catalog_count', [
+            $search,
+            $category
+        ]);
+
         return (int) ($result['count'] ?? 0);
     }
 }

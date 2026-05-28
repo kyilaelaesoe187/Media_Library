@@ -4,19 +4,21 @@
   <div class="wrapper">
 
     <h1>
-    <?php
-    $title = $pageTitle;
+      <h1>
+        <?php
+        $title = $pageTitle ?? 'Catalog';
 
-    if (!empty($search)) {
-      $title = 'Search results for "' . htmlspecialchars($search) . '"';
-    }
+        if (!empty($search)) {
+          $title = 'Search results for "' . htmlspecialchars($search) . '"';
+        }
 
-    if (!empty($section)) {
-      $title .= ' in ' . ucfirst($section);
-    }
+        if (!empty($section)) {
+          $title .= ' in ' . ucfirst($section);
+        }
 
-    echo $title;
-    ?>
+        echo $title;
+        ?>
+      </h1>
     </h1>
 
     <?php if (empty($catalog)): ?>

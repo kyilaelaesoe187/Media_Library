@@ -25,74 +25,61 @@ class CatalogService extends BaseService
 
     public function getCatalogPage(array $queryParams): array
     {
-        $section = $this->validateCategory(
-            $queryParams['cat'] ?? null,
-            ['books', 'movies', 'music']
-        );
+        // 1. INPUT CLEANING
+        $section = $this->normalizeSearch($queryParams['cat'] ?? null);
+        $search  = $this->normalizeSearch($queryParams['s'] ?? null);
 
-        $search = $this->normalizeSearch(
-            $queryParams['s'] ?? null
-        );
+        // 2. FORCE VALIDATION (SAFE MODE)
+        $allowedCategories = ['books', 'movies', 'music'];
 
+        if ($section && !in_array($section, $allowedCategories, true)) {
+            $section = null;
+        }
+
+        // 3. PAGINATION SAFE
         $currentPage = $this->getCurrentPage($queryParams);
 
         $totalItems = $this->repo->count($section, $search);
 
-        $pagination = $this->buildPagination($totalItems, $currentPage);
+        $pagination = $this->buildPagination($totalItems, $currentPage, 10);
 
+        // 4. DATA LOAD
         $catalog = $this->loadCatalog(
             $section,
             $search,
-            $pagination
+            $pagination['limit'],
+            $pagination['offset']
         );
 
         return [
-            'catalog' => $catalog,
-            'section' => $section,
-            'search' => $search,
-            'currentPage' => $pagination['currentPage'],
-            'totalPages' => $pagination['totalPages'],
-            'pageTitle' => $this->buildPageTitle($section),
-            'queryString' => $this->buildQueryString($section, $search)
+            'catalog'      => $catalog,
+            'section'      => $section,
+            'search'       => $search,
+            'currentPage'  => $pagination['currentPage'],
+            'totalPages'   => $pagination['totalPages']
         ];
     }
 
     private function loadCatalog(
         ?string $section,
         ?string $search,
-        array $pagination
+        int $limit,
+        int $offset
     ): array {
 
         if ($search && $section) {
-            return $this->repo->search(
-                $search,
-                $section,
-                $pagination['limit'],
-                $pagination['offset']
-            );
+            return $this->repo->search($search, $section, $limit, $offset);
         }
 
         if ($search) {
-            return $this->repo->search(
-                $search,
-                null,
-                $pagination['limit'],
-                $pagination['offset']
-            );
+            return $this->repo->search($search, null, $limit, $offset);
         }
 
         if ($section) {
-            return $this->repo->findByCategory(
-                $section,
-                $pagination['limit'],
-                $pagination['offset']
-            );
+            return $this->repo->findByCategory($section, $limit, $offset);
         }
 
-        return $this->repo->findAll(
-            $pagination['limit'],
-            $pagination['offset']
-        );
+        return $this->repo->findAll($limit, $offset);
     }
 
     private function buildPageTitle(?string $section): string

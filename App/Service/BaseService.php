@@ -18,24 +18,24 @@ abstract class BaseService //implements BaseInterface
     {
         $page = filter_var($params['pg'] ?? 1, FILTER_VALIDATE_INT);
 
-        return ($page === false || $page < 1) ? 1 : $page;
+        return ($page && $page > 0) ? $page : 1;
     }
-
-
 
     protected function buildPagination(
         int $totalItems,
         int $currentPage,
-        int $itemsPerPage = 8
+        int $limit = 10
     ): array {
 
-        $totalPages = max(1, (int) ceil($totalItems / $itemsPerPage));
+        $totalPages = max(1, (int) ceil($totalItems / $limit));
 
-        $currentPage = min($currentPage, $totalPages);
+        if ($currentPage > $totalPages) {
+            $currentPage = $totalPages;
+        }
 
         return [
-            'limit' => $itemsPerPage,
-            'offset' => ($currentPage - 1) * $itemsPerPage,
+            'limit' => $limit,
+            'offset' => ($currentPage - 1) * $limit,
             'currentPage' => $currentPage,
             'totalPages' => $totalPages
         ];
@@ -83,7 +83,8 @@ abstract class BaseService //implements BaseInterface
     {
         return array_merge([
             'success' => true,
-            'message' => $message
+            'message' => $message,
+            'data'=> $data
         ], $data);
     }
 
@@ -91,7 +92,8 @@ abstract class BaseService //implements BaseInterface
     {
         return array_merge([
             'success' => false,
-            'message' => $message
+            'message' => $message,
+             'data' => $data
         ], $data);
     }
 }

@@ -41,7 +41,6 @@ class Validator
                     $ruleValue
                 );
 
-                // STOP NEXT RULES
                 if (isset($this->errors[$field])) {
                     break;
                 }
@@ -53,12 +52,11 @@ class Validator
 
     private function apply(
         string $field,
-        $value,
+        mixed $value,
         string $rule,
-        $ruleValue = null
+        mixed $ruleValue = null
     ): void {
 
-        // REQUIRED
         if (
             $rule === 'required' &&
             empty($value)
@@ -70,7 +68,6 @@ class Validator
             return;
         }
 
-        // EMAIL
         if (
             $rule === 'email' &&
             !empty($value) &&
@@ -83,7 +80,6 @@ class Validator
             return;
         }
 
-        // MIN
         if (
             $rule === 'min' &&
             strlen((string) $value) < $ruleValue
@@ -96,7 +92,6 @@ class Validator
             return;
         }
 
-        // MAX
         if (
             $rule === 'max' &&
             strlen((string) $value) > $ruleValue
@@ -109,7 +104,6 @@ class Validator
             return;
         }
 
-        // PASSWORD STRENGTH
         if (
             $rule === 'password_strength' &&
             !empty($value)

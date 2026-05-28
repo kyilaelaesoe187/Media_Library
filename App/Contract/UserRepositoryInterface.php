@@ -2,10 +2,22 @@
 
 namespace App\Contract;
 
+use App\Model\User;
+
 interface UserRepositoryInterface
-extends BaseInterface
 {
-    public function findByEmail(
-        string $email
-    ): ?array;
+    public function findById(int $id): ?User;
+
+    public function findByEmail(string $email): ?User;
+
+    public function findAll(
+        ?int $limit = null,
+        int $offset = 0
+    ): array;
+
+    public function create(User $user): bool;
+
+    public function update(User $user): bool;
+
+    public function delete(int $id): bool;
 }

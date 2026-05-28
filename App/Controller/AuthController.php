@@ -2,12 +2,16 @@
 
 namespace App\Controller;
 
+use App\Request\LoginRequest;
+use App\Request\RegisterRequest;
 use App\Service\UserService;
+use App\Service\Validator;
 
 class AuthController extends BaseController
 {
     public function __construct(
-        private UserService $service
+        private UserService $service,
+        private Validator $validator
     ) {}
 
     public function login(): void
@@ -16,42 +20,44 @@ class AuthController extends BaseController
         $errors = [];
 
         if ($this->isPost()) {
+// var_dump($this->isPost());
+// exit;
+            $request = new LoginRequest();
 
-            $result = $this->service->login(
-                $this->post('email'),
-                $this->post('password')
-            );
+            if (!$request->validate()) {
 
-            // if ($result['success']) {
-
-
-            //     $this->session('user_id', $result['user']['id']);
-            //     $this->redirect('?page=home');
-            // }
-            if ($result['success']) {
-
-                // SAVE SESSION
-                $_SESSION['user'] = $result['user'];
-
-                $_SESSION['user_id'] = $result['user']['id'];
-
-                // DEBUG
-                // REMOVE AFTER TEST
-                /*
-            echo '<pre>';
-            print_r($_SESSION);
-            exit;
-            */
-
-                // REDIRECT
-                header('Location: ?page=home');
-                exit;
+                $this->render('auth/login', [
+                    'message' => 'Validation failed',
+                    'errors' => $request->errors()
+                ]);
+                return;
             }
 
-            $this->render('auth/login', [
-                'message' => $result['message'],
-                'errors' => $result['errors'] ?? []
-            ]);
+            $data = $request->validated();
+// var_dump($data);
+// exit;
+            $result = $this->service->login(
+                $data['email'],
+                $data['password']
+            );
+// var_dump($result);
+// exit;
+            if ($result['success']) {
+// var_dump($result);
+// exit;
+                $user = $result['data']['user'] ?? null;
+// var_dump($user);
+// exit;
+                if ($user) {
+
+                    $_SESSION['user'] = $user;
+                    $_SESSION['user_id'] = $user['id'];
+                }
+
+                $this->redirect('?page=home');
+            }
+
+            $message = $result['message'];
         }
 
         $this->render('auth/login', compact('message', 'errors'));
@@ -64,10 +70,22 @@ class AuthController extends BaseController
 
         if ($this->isPost()) {
 
+            $request = new RegisterRequest();
+
+            if (!$request->validate()) {
+                $this->render('auth/register', [
+                    'message' => 'Validation failed',
+                    'errors' => $request->errors()
+                ]);
+                return;
+            }
+
+            $data = $request->validated();
+
             $result = $this->service->register(
-                $this->post('username'),
-                $this->post('email'),
-                $this->post('password')
+                $data['username'],
+                $data['email'],
+                $data['password']
             );
 
             if ($result['success']) {
@@ -75,7 +93,6 @@ class AuthController extends BaseController
             }
 
             $message = $result['message'];
-            $errors = $result['errors'] ?? [];
         }
 
         $this->render('auth/register', compact('message', 'errors'));

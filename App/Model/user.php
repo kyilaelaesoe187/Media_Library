@@ -4,50 +4,117 @@ namespace App\Model;
 
 class User
 {
-    /* =========================
-     * LOGIN VALIDATION
-     * ========================= */
+    private ?int $id;
 
-    public static function loginRules(): array
+    private string $username;
+
+    private string $email;
+
+    private string $passwordHash;
+
+    public function __construct(
+        ?int $id,
+        string $username,
+        string $email,
+        string $passwordHash
+    ) {
+        $this->id = $id;
+
+        $this->changeUsername($username);
+
+        $this->changeEmail($email);
+
+        $this->passwordHash = $passwordHash;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | GETTERS
+    |--------------------------------------------------------------------------
+    */
+
+    public function id(): ?int
+    {
+        return $this->id;
+    }
+
+    public function username(): string
+    {
+        return $this->username;
+    }
+
+    public function email(): string
+    {
+        return $this->email;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | BUSINESS RULES
+    |--------------------------------------------------------------------------
+    */
+
+    public function changeUsername(string $username): void
+    {
+        $username = trim($username);
+
+        if ($username === '') {
+            throw new \InvalidArgumentException(
+                'Username is required.'
+            );
+        }
+
+        $this->username = $username;
+    }
+
+    public function changeEmail(string $email): void
+    {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException(
+                'Invalid email.'
+            );
+        }
+
+        $this->email = $email;
+    }
+
+    public function verifyPassword(
+        string $plainPassword
+    ): bool {
+        return password_verify(
+            $plainPassword,
+            $this->passwordHash
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PERSISTENCE
+    |--------------------------------------------------------------------------
+    */
+
+    public function toPersistence(): array
     {
         return [
-
-            'email' => [
-                'required' => true,
-                'email' => true,
-            ],
-
-            'password' => [
-                'required' => true,
-            ],
+            'id' => $this->id,
+            'username' => $this->username,
+            'email' => $this->email,
+            'password' => $this->passwordHash
         ];
     }
 
-    /* =========================
-     * REGISTER VALIDATION
-     * ========================= */
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSE
+    |--------------------------------------------------------------------------
+    */
 
-    public static function registerRules(): array
+    public function toResponse(): array
     {
         return [
-
-            'username' => [
-                'required' => true,
-                'min' => 3,
-                'max' => 50,
-            ],
-
-            'email' => [
-                'required' => true,
-                'email' => true,
-                'max' => 100,
-            ],
-
-            'password' => [
-                'required' => true,
-                'min' => 6,
-                'password_strength' => true,
-            ],
+            'id' => $this->id,
+            'username' => $this->username,
+            'email' => $this->email
         ];
     }
 }
