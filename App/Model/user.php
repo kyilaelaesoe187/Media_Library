@@ -109,12 +109,12 @@ class User
     |--------------------------------------------------------------------------
     */
 
-    public function toResponse(): array
-    {
-        return [
-            'id' => $this->id,
-            'username' => $this->username,
-            'email' => $this->email
-        ];
-    }
+    // public function toResponse(): array
+    // {
+    //     return [
+    //         'id' => $this->id,
+    //         'username' => $this->username,
+    //         'email' => $this->email
+    //     ];
+    // }
 }

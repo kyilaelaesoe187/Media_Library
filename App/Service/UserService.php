@@ -4,6 +4,8 @@ namespace App\Service;
 
 use App\Contract\UserRepositoryInterface;
 use App\Model\User;
+use App\Mapper\UserMapper;
+use App\Response\ApiResponse;
 
 class UserService extends BaseService
 {
@@ -11,159 +13,94 @@ class UserService extends BaseService
         private UserRepositoryInterface $repo
     ) {}
 
-    /*
-    |--------------------------------------------------------------------------
-    | LOGIN
-    |--------------------------------------------------------------------------
-    */
-
-    public function login(
-        string $email,
-        string $password
-    ): array {
-
-        $user = $this->repo
-            ->findByEmail($email);
+    public function login(string $email, string $password): array
+    {
+        $user = $this->repo->findByEmail($email);
 
         if (!$user) {
-            return $this->error(
-                'Invalid email'
-            );
+            return ApiResponse::error('Invalid email');
         }
 
-        if (
-            !$user->verifyPassword($password)
-        ) {
-            return $this->error(
-                'Wrong password'
-            );
+        if (!$user->verifyPassword($password)) {
+            return ApiResponse::error('Wrong password');
         }
 
-        return $this->success(
+        return ApiResponse::success(
             'Login successful',
             [
-                'user' => $user->toResponse()
+                'user' => UserMapper::toArray($user)
             ]
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | REGISTER
-    |--------------------------------------------------------------------------
-    */
-
-    public function register(
-        string $username,
-        string $email,
-        string $password
-    ): array {
-
-        if (
-            $this->repo->findByEmail($email)
-        ) {
-            return $this->error(
-                'Email already exists'
-            );
+    public function register(string $username, string $email, string $password): array
+    {
+        if ($this->repo->findByEmail($email)) {
+            return ApiResponse::error('Email already exists');
         }
 
         $user = new User(
             null,
             $username,
             $email,
-            password_hash(
-                $password,
-                PASSWORD_DEFAULT
-            )
+            password_hash($password, PASSWORD_DEFAULT)
         );
 
         $ok = $this->repo->create($user);
 
-        return $ok
-            ? $this->success(
-                'Registration successful',
-                [
-                    'user' => $user->toResponse()
-                ]
-            )
-            : $this->error(
-                'Registration failed'
-            );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | GET USER
-    |--------------------------------------------------------------------------
-    */
-
-    public function findUser(
-        int $id
-    ): array {
-
-        $user = $this->repo
-            ->findById($id);
-
-        if (!$user) {
-            return $this->error(
-                'User not found'
-            );
+        if (!$ok) {
+            return ApiResponse::error('Registration failed');
         }
 
-        return $this->success(
-            'User found',
+        return ApiResponse::success(
+            'Registration successful',
             [
-                'user' => $user->toResponse()
+                'user' => UserMapper::toArray($user)
             ]
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET ALL USERS
-    |--------------------------------------------------------------------------
-    */
+    public function findUser(int $id): array
+    {
+        $user = $this->repo->findById($id);
+
+        if (!$user) {
+            return ApiResponse::error('User not found');
+        }
+
+        return ApiResponse::success(
+            'User found',
+            [
+                'user' => UserMapper::toArray($user)
+            ]
+        );
+    }
 
     public function allUsers(): array
     {
-        $users = $this->repo
-            ->findAll();
+        $users = $this->repo->findAll();
 
-        return $this->success(
+        return ApiResponse::success(
             'Users retrieved',
             [
                 'users' => array_map(
-                    fn(User $user)
-                        => $user->toResponse(),
+                    fn($user) => UserMapper::toArray($user),
                     $users
                 )
             ]
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | DELETE USER
-    |--------------------------------------------------------------------------
-    */
-
-    public function deleteUser(
-        int $id
-    ): array {
-
-        $user = $this->repo
-            ->findById($id);
+    public function deleteUser(int $id): array
+    {
+        $user = $this->repo->findById($id);
 
         if (!$user) {
-            return $this->error(
-                'User not found'
-            );
+            return ApiResponse::error('User not found');
         }
 
         $this->repo->delete($id);
 
-        return $this->success(
-            'User deleted'
-        );
+        return ApiResponse::success('User deleted');
     }
 }

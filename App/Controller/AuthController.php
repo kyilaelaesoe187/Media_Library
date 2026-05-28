@@ -7,6 +7,7 @@ use App\Request\RegisterRequest;
 use App\Service\UserService;
 use App\Service\Validator;
 
+
 class AuthController extends BaseController
 {
     public function __construct(

@@ -1,8 +1,6 @@
 <?php
 
 namespace App\Service;
-
-use App\Contract\BaseInterface;
 use App\Contract\CatalogRepositoryInterface;
 
 class CatalogService extends BaseService

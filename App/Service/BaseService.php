@@ -2,13 +2,11 @@
 
 namespace App\Service;
 
-use App\Contract\BaseInterface;
-
 /**
  * Shared service utilities (ONLY reusable logic)
  * No business logic here
  */
-abstract class BaseService //implements BaseInterface
+abstract class BaseService 
 {
     /* =========================
      * PAGINATION
@@ -84,7 +82,7 @@ abstract class BaseService //implements BaseInterface
         return array_merge([
             'success' => true,
             'message' => $message,
-            'data'=> $data
+            'data' => $data
         ], $data);
     }
 
