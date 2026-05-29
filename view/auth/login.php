@@ -7,7 +7,7 @@ $hideSearch = true; ?>
 <div class="auth-page">
     <div class="auth-card">
 
-        <h2 class="auth-title">Welcome Back</h2>
+        <h2 class="auth-title">Welcome</h2>
         <p class="auth-subtitle">Login to continue to Media Library</p>
 
         <?php if (!empty($message)): ?>

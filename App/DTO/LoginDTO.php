@@ -2,10 +2,10 @@
 
 namespace App\DTO;
 
-class LoginDTO
+final class LoginDTO
 {
     public function __construct(
-        public string $email,
-        public string $password
+        public readonly string $email,
+        public readonly string $password
     ) {}
 }

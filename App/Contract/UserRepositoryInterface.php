@@ -15,7 +15,7 @@ interface UserRepositoryInterface
         int $offset = 0
     ): array;
 
-    public function create(User $user): bool;
+    public function create(User $user): ?User;
 
     public function update(User $user): bool;
 

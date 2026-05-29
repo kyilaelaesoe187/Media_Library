@@ -2,73 +2,82 @@
 
 namespace App\Controller;
 
+use App\DTO\LoginDTO;
+use App\DTO\RegisterDTO;
 use App\Request\LoginRequest;
 use App\Request\RegisterRequest;
 use App\Service\UserService;
-use App\Mapper\UserMapper;
 
 class AuthController extends BaseController
 {
     public function __construct(
-        private UserService $service,
-        private UserMapper $userMapper
+        private UserService $service
     ) {}
 
     public function login(): void
     {
-        if (!$this->isPost()) {
-            $this->render('auth/login');
-            return;
-        }
+        $this->processForm(
 
-        $this->handleRequest(
-            new LoginRequest(),
-            function ($data) {
-// echo$data;
-// exit;
-                $dto = $this->userMapper->toLoginDTO($data);
+            request: new LoginRequest(),
 
-                $result = $this->service->login($dto);
+            view: 'auth/login',
 
-                $this->handleServiceResult(
-                    $result,
-                    function ($result) {
+            serviceAction: function (array $data) {
 
-                        $_SESSION['user'] = $result['data']['user'];
-                        $_SESSION['user_id'] = $result['data']['user']['id'];
+                return $this->service->login(
 
-                        $this->redirect('?page=home');
-                    },
-                    'auth/login'
+                    new LoginDTO(
+                        email: $data['email'],
+                        password: $data['password']
+                    )
                 );
             },
-            'auth/login'
+
+            onSuccess: function ($response) {
+
+                $this->session('user', [
+
+                    'id' => $response->data->id,
+
+                    'username' => $response->data->username,
+
+                    'email' => $response->data->email
+                ]);
+
+                $this->session(
+                    'user_id',
+                    $response->data->id
+                );
+
+                $this->redirect('?page=home');
+            }
         );
     }
 
     public function register(): void
     {
-        if (!$this->isPost()) {
-            $this->render('auth/register');
-            return;
-        }
+        $this->processForm(
 
-        $this->handleRequest(
-            new RegisterRequest(),
-            function ($data) {
+            request: new RegisterRequest(),
 
-               $dto = $this->userMapper->toRegisterDTO($data);
+            view: 'auth/register',
 
-                $result = $this->service->register($dto);
-                $this->handleServiceResult(
-                    $result,
-                    function () {
-                        $this->redirect('?page=login');
-                    },
-                    'auth/register'
+            serviceAction: function (array $data) {
+
+                return $this->service->register(
+
+                    new RegisterDTO(
+                        username: $data['username'],
+                        email: $data['email'],
+                        password: $data['password']
+                    )
                 );
             },
-            'auth/register'
+
+            onSuccess: function () {
+
+                $this->redirect('?page=login');
+            }
         );
     }
 

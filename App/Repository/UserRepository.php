@@ -3,11 +3,12 @@
 namespace App\Repository;
 
 use App\Contract\UserRepositoryInterface;
+use App\Mapper\UserMapper;
 use App\Model\User;
 
 class UserRepository
-    extends BaseRepository
-    implements UserRepositoryInterface
+extends BaseRepository
+implements UserRepositoryInterface
 {
     public function findById(int $id): ?User
     {
@@ -17,7 +18,7 @@ class UserRepository
         );
 
         return $data
-            ? $this->map($data)
+            ? UserMapper::fromArray($data)
             : null;
     }
 
@@ -31,7 +32,7 @@ class UserRepository
         );
 
         return $data
-            ? $this->map($data)
+            ? UserMapper::fromArray($data)
             : null;
     }
 
@@ -46,14 +47,21 @@ class UserRepository
         );
 
         return array_map(
-            fn(array $row) => $this->map($row),
+            fn(array $row)
+            => UserMapper::fromArray($row),
             $rows
         );
     }
 
-    public function create(User $user): bool
+    public function create(User $user): User
     {
         $data = $user->toPersistence();
+
+        /*
+    |--------------------------------------------------------------------------
+    | SAVE USER
+    |--------------------------------------------------------------------------
+    */
 
         $this->procedure(
             'sp_create_user',
@@ -64,7 +72,24 @@ class UserRepository
             ]
         );
 
-        return true;
+        /*
+    |--------------------------------------------------------------------------
+    | RELOAD PERSISTED USER
+    |--------------------------------------------------------------------------
+    */
+
+        $savedUser = $this->findByEmail(
+            $data['email']
+        );
+
+        if (!$savedUser) {
+
+            throw new \RuntimeException(
+                'Failed to reload saved user.'
+            );
+        }
+
+        return $savedUser;
     }
 
     public function update(User $user): bool
@@ -92,19 +117,5 @@ class UserRepository
         );
 
         return true;
-    }
-
-    private function map(array $data): User
-    {
-    //      var_dump($data);
-    // exit;
- 
-
-        return new User(
-            $data['id'],
-            $data['username'],
-            $data['email'],
-            $data['password']
-        );
     }
 }

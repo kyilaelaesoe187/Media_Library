@@ -29,41 +29,105 @@ abstract class BaseController
         exit;
     }
 
-     protected function handleServiceResult(
-        array $result,
-        callable $onSuccess,
-        string $errorView,
-        array $errorData = []
+    protected function processForm(
+        object $request,
+        string $view,
+        callable $serviceAction,
+        callable $onSuccess
     ): void {
-        if (!empty($result['success'])) {
-            $onSuccess($result);
+
+        /*
+    |--------------------------------------------------------------------------
+    | VALIDATION
+    |--------------------------------------------------------------------------
+    */
+
+        if (!$request->validate()) {
+
+            $this->render($view, [
+                'message' => 'Validation failed',
+                'errors' => $request->errors()
+            ]);
+
             return;
         }
 
-        $this->render($errorView, array_merge([
-            'message' => $result['message'] ?? 'Something went wrong',
-        ], $errorData));
-    }
+        /*
+    |--------------------------------------------------------------------------
+    | VALIDATED DATA
+    |--------------------------------------------------------------------------
+    */
 
-    protected function handleRequest(
-    object $request,
-    callable $onSuccess,
-    string $view
-): void {
+        $data = $request->validated();
 
-    if (!$request->validate()) {
+        /*
+    |--------------------------------------------------------------------------
+    | SERVICE CALL
+    |--------------------------------------------------------------------------
+    */
+
+        $response = $serviceAction($data);
+
+        /*
+    |--------------------------------------------------------------------------
+    | SUCCESS
+    |--------------------------------------------------------------------------
+    */
+
+        if ($response->success) {
+
+            $onSuccess($response);
+
+            return;
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | FAILURE
+    |--------------------------------------------------------------------------
+    */
+
         $this->render($view, [
-            'message' => 'Validation failed',
-            'errors' => $request->errors()
+            'message' => $response->message,
+            'errors' => []
         ]);
-        return;
     }
-// var_dump($request->validated());
-// exit;
-    $onSuccess($request->validated());
-    // echo ($onSuccess($request->validated()));
-    // exit;
-}
+
+    //      protected function handleServiceResult(
+    //         array $result,
+    //         callable $onSuccess,
+    //         string $errorView,
+    //         array $errorData = []
+    //     ): void {
+    //         if (!empty($result['success'])) {
+    //             $onSuccess($result);
+    //             return;
+    //         }
+
+    //         $this->render($errorView, array_merge([
+    //             'message' => $result['message'] ?? 'Something went wrong',
+    //         ], $errorData));
+    //     }
+
+    //     protected function handleRequest(
+    //     object $request,
+    //     callable $onSuccess,
+    //     string $view
+    // ): void {
+
+    //     if (!$request->validate()) {
+    //         $this->render($view, [
+    //             'message' => 'Validation failed',
+    //             'errors' => $request->errors()
+    //         ]);
+    //         return;
+    //     }
+    // // var_dump($request->validated());
+    // // exit;
+    //     $onSuccess($request->validated());
+    //     // echo ($onSuccess($request->validated()));
+    //     // exit;
+    // }
 
 
 

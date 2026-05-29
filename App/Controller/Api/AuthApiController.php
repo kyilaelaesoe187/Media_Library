@@ -3,9 +3,12 @@
 namespace App\Controller\Api;
 
 use App\Controller\BaseController;
+use App\DTO\LoginDTO;
+use App\DTO\RegisterDTO;
 use App\Service\UserService;
 
-class AuthApiController extends BaseController
+class AuthApiController
+extends BaseController
 {
     public function __construct(
         private UserService $service
@@ -13,31 +16,52 @@ class AuthApiController extends BaseController
 
     public function login(): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
-
-        $result = $this->service->login(
-            $data['email'] ?? '',
-            $data['password'] ?? ''
+        $data = json_decode(
+            file_get_contents('php://input'),
+            true
         );
 
-        if ($result['success']) {
-            $_SESSION['user'] = $result['data']['user'];
+        $dto = new LoginDTO(
+            email: $data['email'] ?? '',
+            password: $data['password'] ?? ''
+        );
+
+        $response = $this->service
+            ->login($dto);
+
+        if ($response->success) {
+
+            $_SESSION['user'] = [
+                'id' => $response->data->id,
+                'username' => $response->data->username,
+                'email' => $response->data->email
+            ];
         }
 
-        $this->json($result);
+        $this->json(
+            $response->toArray()
+        );
     }
 
     public function register(): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
-
-        $result = $this->service->register(
-            $data['username'] ?? '',
-            $data['email'] ?? '',
-            $data['password'] ?? ''
+        $data = json_decode(
+            file_get_contents('php://input'),
+            true
         );
 
-        $this->json($result);
+        $dto = new RegisterDTO(
+            username: $data['username'] ?? '',
+            email: $data['email'] ?? '',
+            password: $data['password'] ?? ''
+        );
+
+        $response = $this->service
+            ->register($dto);
+
+        $this->json(
+            $response->toArray()
+        );
     }
 
     public function logout(): void
