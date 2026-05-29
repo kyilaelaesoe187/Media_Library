@@ -2,11 +2,13 @@
 
 namespace App\DTO;
 
-class UserDTO
+class RegisterDTO
 {
     public function __construct(
-        public int $id,
         public string $username,
-        public string $email
+        public string $email,
+        public string $password
     ) {}
+
+    
 }

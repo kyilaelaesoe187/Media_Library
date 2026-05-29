@@ -10,7 +10,7 @@ class User
 
     private string $email;
 
-    private string $passwordHash;
+    public string $passwordHash;
 
     public function __construct(
         ?int $id,
@@ -81,11 +81,19 @@ class User
     public function verifyPassword(
         string $plainPassword
     ): bool {
+
+    
+
         return password_verify(
             $plainPassword,
             $this->passwordHash
         );
     }
+
+    public function passwordHash(): string
+{
+    return $this->passwordHash;
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -103,18 +111,4 @@ class User
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RESPONSE
-    |--------------------------------------------------------------------------
-    */
-
-    // public function toResponse(): array
-    // {
-    //     return [
-    //         'id' => $this->id,
-    //         'username' => $this->username,
-    //         'email' => $this->email
-    //     ];
-    // }
 }

@@ -26,7 +26,7 @@ use App\Service\CatalogService;
 use App\Service\FormatService;
 use App\Service\UserService;
 use App\Service\Validator;
-
+use App\Mapper\UserMapper;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +49,7 @@ use App\Controller\Api\CatalogApiController;
 use App\Controller\Api\DetailsApiController;
 use App\Controller\Api\SuggestApiController;
 use App\Controller\Api\AuthApiController;
+use App\Model\User;
 
 /**
  * Front Controller
@@ -121,9 +122,9 @@ $formatService = new FormatService(
 );
 
 $validator = new Validator();
-
+$mapper= new UserMapper();
 $userService = new UserService(
-    $userRepo
+    $userRepo,$mapper
 );
 
 
@@ -147,8 +148,7 @@ $suggestController = new SuggestController(
 );
 
 $authController = new AuthController(
-    $userService,
-    $validator
+    $userService,$mapper
 );
 
 /*

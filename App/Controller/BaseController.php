@@ -29,6 +29,42 @@ abstract class BaseController
         exit;
     }
 
+     protected function handleServiceResult(
+        array $result,
+        callable $onSuccess,
+        string $errorView,
+        array $errorData = []
+    ): void {
+        if (!empty($result['success'])) {
+            $onSuccess($result);
+            return;
+        }
+
+        $this->render($errorView, array_merge([
+            'message' => $result['message'] ?? 'Something went wrong',
+        ], $errorData));
+    }
+
+    protected function handleRequest(
+    object $request,
+    callable $onSuccess,
+    string $view
+): void {
+
+    if (!$request->validate()) {
+        $this->render($view, [
+            'message' => 'Validation failed',
+            'errors' => $request->errors()
+        ]);
+        return;
+    }
+// var_dump($request->validated());
+// exit;
+    $onSuccess($request->validated());
+    // echo ($onSuccess($request->validated()));
+    // exit;
+}
+
 
 
     protected function post(string $key, $default = null)

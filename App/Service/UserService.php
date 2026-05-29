@@ -3,61 +3,70 @@
 namespace App\Service;
 
 use App\Contract\UserRepositoryInterface;
-use App\Model\User;
+use App\DTO\LoginDTO;
+use App\DTO\RegisterDTO;
 use App\Mapper\UserMapper;
-use App\Response\ApiResponse;
+// use App\Factory\UserFactory;
 
 class UserService extends BaseService
 {
     public function __construct(
-        private UserRepositoryInterface $repo
+        private UserRepositoryInterface $repo,
+        private UserMapper $mapper
+        // private UserFactory $factory
     ) {}
 
-    public function login(string $email, string $password): array
+    public function login(LoginDTO $dto): array
     {
-        $user = $this->repo->findByEmail($email);
+        $user = $this->repo->findByEmail($dto->email);
 
         if (!$user) {
-            return ApiResponse::error('Invalid email');
+            return [
+                'success' => false,
+                'message' => 'Invalid email'
+            ];
         }
+        
+        
 
-        if (!$user->verifyPassword($password)) {
-            return ApiResponse::error('Wrong password');
+        if (!$user->verifyPassword($dto->password)) {
+            return [
+                'success' => false,
+                'message' => 'Wrong password'
+            ];
         }
-
-        return ApiResponse::success(
-            'Login successful',
-            [
-                'user' => UserMapper::toArray($user)
+        // var_dump($user->passwordHash());
+        // var_dump($dto->password);
+        // exit;
+        return [
+            'success' => true,
+            'message' => 'Login successful',
+            'data' => [
+                'user' => $this->mapper->toArray($user)
             ]
-        );
+        ];
     }
 
-    public function register(string $username, string $email, string $password): array
+    public function register(RegisterDTO $dto): array
     {
-        if ($this->repo->findByEmail($email)) {
-            return ApiResponse::error('Email already exists');
+        if ($this->repo->findByEmail($dto->email)) {
+            return [
+                'success' => false,
+                'message' => 'Email already exists'
+            ];
         }
 
-        $user = new User(
-            null,
-            $username,
-            $email,
-            password_hash($password, PASSWORD_DEFAULT)
-        );
+        $user = $this->mapper->fromRegisterDTO($dto);
 
-        $ok = $this->repo->create($user);
+        $this->repo->create($user);
 
-        if (!$ok) {
-            return ApiResponse::error('Registration failed');
-        }
-
-        return ApiResponse::success(
-            'Registration successful',
-            [
-                'user' => UserMapper::toArray($user)
+        return [
+            'success' => true,
+            'message' => 'Registration successful',
+            'data' => [
+                'user' => $this->mapper->toArray($user)
             ]
-        );
+        ];
     }
 
     public function findUser(int $id): array
@@ -65,30 +74,33 @@ class UserService extends BaseService
         $user = $this->repo->findById($id);
 
         if (!$user) {
-            return ApiResponse::error('User not found');
+            return [
+                'success' => false,
+                'message' => 'User not found'
+            ];
         }
 
-        return ApiResponse::success(
-            'User found',
-            [
-                'user' => UserMapper::toArray($user)
+        return [
+            'success' => true,
+            'data' => [
+                'user' => $this->mapper->toArray($user)
             ]
-        );
+        ];
     }
 
     public function allUsers(): array
     {
         $users = $this->repo->findAll();
 
-        return ApiResponse::success(
-            'Users retrieved',
-            [
+        return [
+            'success' => true,
+            'data' => [
                 'users' => array_map(
-                    fn($user) => UserMapper::toArray($user),
+                    fn($user) => $this->mapper->toArray($user),
                     $users
                 )
             ]
-        );
+        ];
     }
 
     public function deleteUser(int $id): array
@@ -96,11 +108,17 @@ class UserService extends BaseService
         $user = $this->repo->findById($id);
 
         if (!$user) {
-            return ApiResponse::error('User not found');
+            return [
+                'success' => false,
+                'message' => 'User not found'
+            ];
         }
 
         $this->repo->delete($id);
 
-        return ApiResponse::success('User deleted');
+        return [
+            'success' => true,
+            'message' => 'User deleted'
+        ];
     }
 }

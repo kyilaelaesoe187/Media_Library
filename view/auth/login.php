@@ -28,12 +28,12 @@ $hideSearch = true; ?>
 
             <div class="auth-group">
                 <label>Email</label>
-                <input type="email" name="email" placeholder="Enter your email" >
+                <input type="email" name="email" placeholder="Enter your email">
             </div>
 
             <div class="auth-group">
                 <label>Password</label>
-                <input type="password" name="password" placeholder="Enter your password" >
+                <input type="password" name="password" placeholder="Enter your password">
             </div>
 
             <button type="submit" class="auth-btn">Login</button>

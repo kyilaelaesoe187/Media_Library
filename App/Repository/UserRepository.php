@@ -96,6 +96,10 @@ class UserRepository
 
     private function map(array $data): User
     {
+    //      var_dump($data);
+    // exit;
+ 
+
         return new User(
             $data['id'],
             $data['username'],

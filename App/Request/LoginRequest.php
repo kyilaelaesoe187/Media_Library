@@ -2,6 +2,8 @@
 
 namespace App\Request;
 
+use App\DTO\LoginDTO;
+
 class LoginRequest extends FormRequest
 {
     public function rules(): array
@@ -11,4 +13,5 @@ class LoginRequest extends FormRequest
             'password' => ['required']
         ];
     }
+   
 }
