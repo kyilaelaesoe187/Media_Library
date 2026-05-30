@@ -16,51 +16,65 @@ extends BaseController
 
     public function login(): void
     {
-        $data = json_decode(
-            file_get_contents('php://input'),
-            true
-        );
+        $this->api(
 
-        $dto = new LoginDTO(
-            email: $data['email'] ?? '',
-            password: $data['password'] ?? ''
-        );
+            action: function () {
 
-        $response = $this->service
-            ->login($dto);
+                $data = json_decode(
+                    file_get_contents('php://input'),
+                    true
+                );
 
-        if ($response->success) {
+                $dto = new LoginDTO(
+                    email: $data['email'] ?? '',
+                    password: $data['password'] ?? ''
+                );
 
-            $_SESSION['user'] = [
-                'id' => $response->data->id,
-                'username' => $response->data->username,
-                'email' => $response->data->email
-            ];
-        }
+                $user = $this->service
+                    ->login($dto);
 
-        $this->json(
-            $response->toArray()
+                $_SESSION['user'] = [
+
+                    'id' => $user->id,
+
+                    'username' => $user->username,
+
+                    'email' => $user->email
+                ];
+
+                $_SESSION['user_id'] = $user->id;
+
+                return [
+                    'user' => $user
+                ];
+            }
         );
     }
 
     public function register(): void
     {
-        $data = json_decode(
-            file_get_contents('php://input'),
-            true
-        );
+        $this->api(
 
-        $dto = new RegisterDTO(
-            username: $data['username'] ?? '',
-            email: $data['email'] ?? '',
-            password: $data['password'] ?? ''
-        );
+            action: function () {
 
-        $response = $this->service
-            ->register($dto);
+                $data = json_decode(
+                    file_get_contents('php://input'),
+                    true
+                );
 
-        $this->json(
-            $response->toArray()
+                $dto = new RegisterDTO(
+                    username: $data['username'] ?? '',
+                    email: $data['email'] ?? '',
+                    password: $data['password'] ?? ''
+                );
+
+                $user = $this->service
+                    ->register($dto);
+
+                return [
+                    'user' => $user
+                ];
+            }
         );
     }
 

@@ -73,25 +73,4 @@ abstract class BaseService
         return implode('&', $params);
     }
 
-    /* =========================
-     * RESPONSE FORMATTERS
-     * ========================= */
-
-    // protected function success(string $message, array $data = []): array
-    // {
-    //     return array_merge([
-    //         'success' => true,
-    //         'message' => $message,
-    //         'data' => $data
-    //     ], $data);
-    // }
-
-    // protected function error(string $message, array $data = []): array
-    // {
-    //     return array_merge([
-    //         'success' => false,
-    //         'message' => $message,
-    //          'data' => $data
-    //     ], $data);
-    // }
 }

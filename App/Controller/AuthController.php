@@ -16,68 +16,87 @@ class AuthController extends BaseController
 
     public function login(): void
     {
-        $this->processForm(
+        $this->executeWithView(function () {
 
-            request: new LoginRequest(),
-
-            view: 'auth/login',
-
-            serviceAction: function (array $data) {
-
-                return $this->service->login(
-
-                    new LoginDTO(
-                        email: $data['email'],
-                        password: $data['password']
-                    )
-                );
-            },
-
-            onSuccess: function ($response) {
-
-                $this->session('user', [
-
-                    'id' => $response->data->id,
-
-                    'username' => $response->data->username,
-
-                    'email' => $response->data->email
-                ]);
-
-                $this->session(
-                    'user_id',
-                    $response->data->id
-                );
-
-                $this->redirect('?page=home');
+            if (!$this->isPost()) {
+                $this->render('auth/login');
+                return;
             }
-        );
+
+            $request = new LoginRequest();
+
+            if (!$request->validate()) {
+                $this->render('auth/login', [
+                    'errors' => $request->errors()
+                ]);
+                return;
+            }
+
+            $dto = new LoginDTO(...$request->validated());
+
+            $user = $this->service->login($dto);
+
+            $_SESSION['user'] = [
+                'id'       => $user->id,
+                'username' => $user->username,
+                'email'    => $user->email,
+            ];
+            // echo '<pre>';
+            // print_r($_SESSION);
+            // echo '</pre>';
+            // exit;
+            $this->redirect('?page=home');
+        });
     }
 
     public function register(): void
     {
-        $this->processForm(
+        $this->execute(
 
-            request: new RegisterRequest(),
+            action: function () {
 
-            view: 'auth/register',
+                if (!$this->isPost()) {
 
-            serviceAction: function (array $data) {
+                    $this->render(
+                        'auth/register'
+                    );
 
-                return $this->service->register(
+                    return;
+                }
 
-                    new RegisterDTO(
-                        username: $data['username'],
-                        email: $data['email'],
-                        password: $data['password']
-                    )
+                $request = new RegisterRequest();
+
+                if (!$request->validate()) {
+
+                    $this->render(
+                        'auth/register',
+                        [
+                            'message' =>
+                            'Validation failed',
+
+                            'errors' =>
+                            $request->errors()
+                        ]
+                    );
+
+                    return;
+                }
+
+                $data = $request->validated();
+
+                $dto = new RegisterDTO(
+                    username: $data['username'],
+                    email: $data['email'],
+                    password: $data['password']
                 );
-            },
 
-            onSuccess: function () {
+                $this->service
+                    ->register($dto);
 
                 $this->redirect('?page=login');
-            }
+            },
+
+            view: 'auth/register'
         );
     }
 

@@ -49,7 +49,6 @@ use App\Controller\Api\CatalogApiController;
 use App\Controller\Api\DetailsApiController;
 use App\Controller\Api\SuggestApiController;
 use App\Controller\Api\AuthApiController;
-use App\Model\User;
 
 /**
  * Front Controller
@@ -124,7 +123,7 @@ $formatService = new FormatService(
 $validator = new Validator();
 $mapper= new UserMapper();
 $userService = new UserService(
-    $userRepo,$mapper
+    $userRepo
 );
 
 
@@ -148,7 +147,7 @@ $suggestController = new SuggestController(
 );
 
 $authController = new AuthController(
-    $userService,$mapper
+    $userService
 );
 
 /*

@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Exception\AppException;
+
 abstract class BaseController
 {
     protected function render(string $view, array $data = []): void
@@ -93,43 +95,6 @@ abstract class BaseController
         ]);
     }
 
-    //      protected function handleServiceResult(
-    //         array $result,
-    //         callable $onSuccess,
-    //         string $errorView,
-    //         array $errorData = []
-    //     ): void {
-    //         if (!empty($result['success'])) {
-    //             $onSuccess($result);
-    //             return;
-    //         }
-
-    //         $this->render($errorView, array_merge([
-    //             'message' => $result['message'] ?? 'Something went wrong',
-    //         ], $errorData));
-    //     }
-
-    //     protected function handleRequest(
-    //     object $request,
-    //     callable $onSuccess,
-    //     string $view
-    // ): void {
-
-    //     if (!$request->validate()) {
-    //         $this->render($view, [
-    //             'message' => 'Validation failed',
-    //             'errors' => $request->errors()
-    //         ]);
-    //         return;
-    //     }
-    // // var_dump($request->validated());
-    // // exit;
-    //     $onSuccess($request->validated());
-    //     // echo ($onSuccess($request->validated()));
-    //     // exit;
-    // }
-
-
 
     protected function post(string $key, $default = null)
     {
@@ -143,14 +108,14 @@ abstract class BaseController
 
     protected function requireLogin(): void
     {
-        if (!$this->session('user_id')) {
+        if (!$this->session('user')) {
             $this->redirect('?page=login');
         }
     }
 
     protected function isLoggedIn(): bool
     {
-        return !empty($this->session('user_id'));
+        return !empty($this->session('user'));
     }
 
     /* =========================
@@ -186,5 +151,79 @@ abstract class BaseController
         }
 
         session_destroy();
+    }
+
+    protected function execute(
+        callable $action,
+        string $view,
+        array $data = []
+    ): void {
+
+        try {
+
+            $action();
+        } catch (AppException $e) {
+
+            $this->render($view, array_merge(
+                $data,
+                [
+                    'message' => $e->getMessage(),
+                    'errors' => []
+                ]
+            ));
+        }
+    }
+
+    protected function api(
+        callable $action
+    ): void {
+
+        try {
+
+            $data = $action();
+
+            $this->json([
+                'success' => true,
+                'message' => 'Success',
+                'data' => $data
+            ]);
+        } catch (AppException $e) {
+
+            $this->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'data' => null
+            ]);
+        }
+    }
+
+    protected function renderError(
+        string $message = 'Something went wrong'
+    ): void {
+        $this->render('error', [
+            'message' => $message
+        ]);
+    }
+
+    protected function executeWithView(
+        callable $callback,
+        string $errorView = 'error'
+    ): void {
+
+        try {
+
+            $callback();
+        } catch (AppException $e) {
+
+            $this->render($errorView, [
+                'message' => $e->getMessage()
+            ]);
+        } catch (\Throwable $e) {
+
+            // fallback for unexpected errors
+            $this->render($errorView, [
+                'message' => 'System error occurred'
+            ]);
+        }
     }
 }

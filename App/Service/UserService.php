@@ -5,8 +5,12 @@ namespace App\Service;
 use App\Contract\UserRepositoryInterface;
 use App\DTO\LoginDTO;
 use App\DTO\RegisterDTO;
+use App\DTO\UserResponseDTO;
+use App\Exception\AuthenticationException;
+use App\Exception\DuplicateEmailException;
+use App\Exception\NotFoundException;
 use App\Mapper\UserMapper;
-use App\Response\ApiResponse;
+use App\Model\User;
 
 final class UserService
 {
@@ -14,17 +18,23 @@ final class UserService
         private UserRepositoryInterface $repo
     ) {}
 
+    /*
+    |--------------------------------------------------------------------------
+    | LOGIN
+    |--------------------------------------------------------------------------
+    */
+
     public function login(
         LoginDTO $dto
-    ): ApiResponse {
+    ): UserResponseDTO {
 
         $user = $this->repo
             ->findByEmail($dto->email);
 
         if (!$user) {
-            return ApiResponse::error(
-                'Invalid email'
-            );
+
+            throw AuthenticationException
+                ::invalidEmail();
         }
 
         if (
@@ -32,26 +42,24 @@ final class UserService
                 $dto->password
             )
         ) {
-            return ApiResponse::error(
-                'Wrong password'
-            );
+
+            throw AuthenticationException
+                ::invalidPassword();
         }
 
-        return ApiResponse::success(
-            'Login successful',
-            UserMapper::toResponseDTO($user)
-        );
+        return UserMapper
+            ::toResponseDTO($user);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | REGISTER
+    |--------------------------------------------------------------------------
+    */
 
     public function register(
         RegisterDTO $dto
-    ): ApiResponse {
-
-        /*
-    |--------------------------------------------------------------------------
-    | CHECK EXISTING EMAIL
-    |--------------------------------------------------------------------------
-    */
+    ): UserResponseDTO {
 
         if (
             $this->repo->findByEmail(
@@ -59,41 +67,84 @@ final class UserService
             )
         ) {
 
-            return ApiResponse::error(
-                'Email already exists'
-            );
+            throw DuplicateEmailException
+                ::alreadyExists();
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | CREATE DOMAIN MODEL
-    |--------------------------------------------------------------------------
-    */
-
-        $user = UserMapper::fromRegisterDTO(
-            $dto
-        );
-
-        /*
-    |--------------------------------------------------------------------------
-    | SAVE + GET PERSISTED ENTITY
-    |--------------------------------------------------------------------------
-    */
+        $user = UserMapper
+            ::fromRegisterDTO($dto);
 
         $savedUser = $this->repo
             ->create($user);
 
-        /*
+        return UserMapper
+            ::toResponseDTO($savedUser);
+    }
+
+    /*
     |--------------------------------------------------------------------------
-    | RESPONSE
+    | FIND USER
     |--------------------------------------------------------------------------
     */
 
-        return ApiResponse::success(
-            'Registration successful',
-            UserMapper::toResponseDTO(
-                $savedUser
-            )
+    public function findUser(
+        int $id
+    ): UserResponseDTO {
+
+        $user = $this->repo
+            ->findById($id);
+
+        if (!$user) {
+
+            throw NotFoundException
+                ::user();
+        }
+
+        return UserMapper
+            ::toResponseDTO($user);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ALL USERS
+    |--------------------------------------------------------------------------
+    */
+
+    public function allUsers(): array
+    {
+        $users = $this->repo
+            ->findAll();
+
+        return array_map(
+
+            fn(User $user)
+
+            => UserMapper
+                ::toResponseDTO($user),
+
+            $users
         );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE USER
+    |--------------------------------------------------------------------------
+    */
+
+    public function deleteUser(
+        int $id
+    ): void {
+
+        $user = $this->repo
+            ->findById($id);
+
+        if (!$user) {
+
+            throw NotFoundException
+                ::user();
+        }
+
+        $this->repo->delete($id);
     }
 }
